@@ -50,7 +50,7 @@ docs/                # 技术方案与接口样例
 在 IDEA 运行配置里，把 **Working directory** 设为仓库根目录：
 
 ```text
-E:\lay-coo-backend
+E:\laycoo\backend
 ```
 
 这样 H2 数据库会统一写到 `data/` 下，与启动脚本保持一致。
