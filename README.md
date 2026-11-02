@@ -11,7 +11,7 @@ Spring Boot 3.2 + Spring Cloud 2023（Gateway + OpenFeign）+ MyBatis-Plus + H2�
 直接打开本仓库根目录：
 
 ```text
-E:\lay-coo-backend
+E:\laycoo\backend
 ```
 
 IDEA 会把根目录 [pom.xml](pom.xml) 识别为 Maven 多模块项目。
