@@ -1,0 +1,50 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: recommend-service
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:file:${DB_DIR:./data}/recommenddb;MODE=MySQL;DATABASE_TO_LOWER=TRUE;AUTO_SERVER=TRUE
+    username: sa
+    password:
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connect-timeout: 3000
+            read-timeout: 8000
+
+services:
+  content-service-url: ${CONTENT_SERVICE_URL:http://localhost:8082}
+  interaction-service-url: ${INTERACTION_SERVICE_URL:http://localhost:8085}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:laycoo-tourism-local-secret-key-please-change-in-production}
+    expire-hours: 168
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.laycoo.tourism: info

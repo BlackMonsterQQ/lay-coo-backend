@@ -1,0 +1,43 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: user-service
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:file:${DB_DIR:./data}/userdb;MODE=MySQL;DATABASE_TO_LOWER=TRUE;AUTO_SERVER=TRUE
+    username: sa
+    password:
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:laycoo-tourism-local-secret-key-please-change-in-production}
+    expire-hours: 168
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.laycoo.tourism: info

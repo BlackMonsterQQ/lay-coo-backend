@@ -1,0 +1,75 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      httpclient:
+        connect-timeout: 3000
+        response-timeout: 30s
+      routes:
+        - id: ai-admin-route
+          uri: ${services.ai-service-url:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/admin/ai/**,/api/v1/ai/**
+        - id: content-admin-route
+          uri: ${services.content-service-url:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/admin/content/**
+        - id: user-service-route
+          uri: ${services.user-service-url:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/user/**
+        - id: content-service-route
+          uri: ${services.content-service-url:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/content/**,/api/v1/category/**,/api/v1/tag/**,/api/v1/search/**
+        - id: interaction-service-route
+          uri: ${services.interaction-service-url:http://localhost:8085}
+          predicates:
+            - Path=/api/v1/favorite/**,/api/v1/like/**,/api/v1/comment/**,/api/v1/rate/**,/api/v1/interaction/**
+        - id: recommend-service-route
+          uri: ${services.recommend-service-url:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/recommend/**
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:laycoo-tourism-local-secret-key-please-change-in-production}
+    expire-hours: 168
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+
+logging:
+  level:
+    org.springframework.cloud.gateway: info
+    com.laycoo.tourism: info
+
+---
+spring:
+  config:
+    activate:
+      on-profile: cloud
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+    gateway:
+      discovery:
+        locator:
+          enabled: false

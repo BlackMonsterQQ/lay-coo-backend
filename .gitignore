@@ -1,0 +1,16 @@
+# Maven 构建产物
+**/target/
+
+# 本地 H2 数据与日志
+data/
+logs/
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# 系统文件
+.DS_Store
+Thumbs.db

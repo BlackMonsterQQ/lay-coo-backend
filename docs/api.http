@@ -1,0 +1,157 @@
+### 岚途 LayCoo · 接口调试样例
+### 1. 登录获取 token（管理员）
+# @name loginAdmin
+POST http://localhost:8080/api/v1/user/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### 2. 普通用户登录
+POST http://localhost:8080/api/v1/user/login
+Content-Type: application/json
+
+{
+  "username": "demo",
+  "password": "demo123"
+}
+
+### 3. 注册
+POST http://localhost:8080/api/v1/user/register
+Content-Type: application/json
+
+{
+  "username": "traveler01",
+  "password": "travel123",
+  "nickname": "旅行者一号"
+}
+
+### 4. 分类与标签
+GET http://localhost:8080/api/v1/category/list
+
+###
+GET http://localhost:8080/api/v1/tag/hot?limit=10
+
+### 5. 内容列表（公开）
+GET http://localhost:8080/api/v1/content/list?page=1&size=6&sort=hot
+
+### 按分类筛选
+GET http://localhost:8080/api/v1/content/list?categoryCode=FOOD&page=1&size=6
+
+### 按类型 + 区域筛选
+GET http://localhost:8080/api/v1/content/list?type=HUMANITY&area=西湖区&page=1&size=6
+
+### 6. 内容详情与相关推荐
+GET http://localhost:8080/api/v1/content/1
+
+###
+GET http://localhost:8080/api/v1/content/1/related?size=4
+
+### 7. 搜索
+GET http://localhost:8080/api/v1/search?keyword=西湖&page=1&size=9
+
+###
+GET http://localhost:8080/api/v1/search/hot
+
+### 8. 推荐
+GET http://localhost:8080/api/v1/recommend/home?size=8
+
+###
+GET http://localhost:8080/api/v1/recommend/hot?limit=8
+
+###
+GET http://localhost:8080/api/v1/recommend/similar/1?size=4
+
+### 9. 互动（需要普通用户 token）
+@token = 请替换为 demo 登录返回的 token
+
+POST http://localhost:8080/api/v1/favorite
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "contentId": 1
+}
+
+###
+GET http://localhost:8080/api/v1/favorite/list?page=1&size=12
+Authorization: Bearer {{token}}
+
+###
+POST http://localhost:8080/api/v1/like
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "contentId": 1
+}
+
+###
+POST http://localhost:8080/api/v1/comment
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "contentId": 1,
+  "content": "醋鱼好吃，建议错峰去。"
+}
+
+###
+POST http://localhost:8080/api/v1/rate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "contentId": 1,
+  "score": 5
+}
+
+###
+GET http://localhost:8080/api/v1/interaction/stats?contentId=1
+
+### 10. 管理端（需要 admin token）
+@adminToken = 请替换为 admin 登录返回的 token
+
+GET http://localhost:8080/api/v1/admin/content/list?status=PENDING&page=1&size=10
+Authorization: Bearer {{adminToken}}
+
+###
+GET http://localhost:8080/api/v1/admin/content/stats
+Authorization: Bearer {{adminToken}}
+
+### 查看待审内容详情
+GET http://localhost:8080/api/v1/admin/content/19
+Authorization: Bearer {{adminToken}}
+
+### 审核通过
+POST http://localhost:8080/api/v1/admin/content/audit
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "id": 19,
+  "action": "APPROVE",
+  "remark": "审核通过"
+}
+
+### 创建 AI 生成任务
+POST http://localhost:8080/api/v1/admin/ai/task
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "categoryCode": "FOOD",
+  "area": "西湖区",
+  "count": 2,
+  "keywords": "茶文化、本地小吃"
+}
+
+### 任务列表与统计
+GET http://localhost:8080/api/v1/admin/ai/task/list?page=1&size=10
+Authorization: Bearer {{adminToken}}
+
+###
+GET http://localhost:8080/api/v1/admin/ai/task/stats
+Authorization: Bearer {{adminToken}}
