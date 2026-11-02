@@ -1,8 +1,10 @@
 # 岚途 LayCoo · 后端服务
 
+GitHub：https://github.com/BlackMonsterQQ/lay-coo-backend
+
 Spring Boot 3.2 + Spring Cloud 2023（Gateway + OpenFeign）+ MyBatis-Plus + H2（本地演示）。
 
-本仓库只包含后端。前端是独立仓库 `lay-coo-frontend`，通过网关 `http://localhost:8080` 联调。
+本仓库只包含后端。前端是独立仓库 [lay-coo-frontend](https://github.com/BlackMonsterQQ/lay-coo-frontend)，通过网关 `http://localhost:8080` 联调。
 
 ## 用 IntelliJ IDEA 打开
 
