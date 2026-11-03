@@ -112,13 +112,17 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                     || path.startsWith("/api/v1/tag")
                     || path.startsWith("/api/v1/search")
                     || path.startsWith("/api/v1/recommend")
+                    || path.startsWith("/api/v1/city")
+                    || path.startsWith("/api/v1/plan")
                     || path.equals("/api/v1/interaction/comment/list")
                     || path.equals("/api/v1/interaction/stats")
                     || path.startsWith("/api/v1/rate/summary")
                     || path.startsWith("/api/v1/rate/list");
         }
         if (HttpMethod.POST.equals(method)) {
-            return path.equals("/api/v1/user/login") || path.equals("/api/v1/user/register");
+            return path.equals("/api/v1/user/login")
+                    || path.equals("/api/v1/user/register")
+                    || path.startsWith("/api/v1/plan/");
         }
         return false;
     }

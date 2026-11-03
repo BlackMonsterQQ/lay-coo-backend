@@ -10,6 +10,14 @@ spring:
         connect-timeout: 3000
         response-timeout: 30s
       routes:
+        - id: plan-service-route
+          uri: ${services.ai-service-url:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/plan/**
+        - id: city-service-route
+          uri: ${services.content-service-url:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/city/**
         - id: ai-admin-route
           uri: ${services.ai-service-url:http://localhost:8084}
           predicates:

@@ -155,3 +155,25 @@ Authorization: Bearer {{adminToken}}
 ###
 GET http://localhost:8080/api/v1/admin/ai/task/stats
 Authorization: Bearer {{adminToken}}
+
+### 11. 行程规划（公开）
+### 城市列表（世界地图坐标）
+GET http://localhost:8080/api/v1/city/list
+
+### 创建多日行程任务
+POST http://localhost:8080/api/v1/plan/generate
+Content-Type: application/json
+
+{
+  "cityCode": "hangzhou",
+  "startDate": "2026-11-10",
+  "endDate": "2026-11-12",
+  "preferences": ["美食", "人文历史"],
+  "extraNote": "带老人，不想走太多路"
+}
+
+### 查询行程（轮询）
+GET http://localhost:8080/api/v1/plan/LPXXXXXXXXXX
+
+### 重试失败的行程
+POST http://localhost:8080/api/v1/plan/LPXXXXXXXXXX/retry

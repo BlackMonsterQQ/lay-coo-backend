@@ -22,6 +22,8 @@ public class ContentSaveRequest {
 
     private String area;
 
+    private String cityCode = "hangzhou";
+
     private String address;
 
     @NotBlank(message = "正文不能为空")

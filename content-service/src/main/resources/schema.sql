@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS content
     title          VARCHAR(128) NOT NULL,
     summary        VARCHAR(512),
     category_id    BIGINT,
+    city_code      VARCHAR(32) DEFAULT 'hangzhou',
     area           VARCHAR(64),
     address        VARCHAR(255),
     body           VARCHAR(8000),
@@ -52,6 +53,26 @@ CREATE TABLE IF NOT EXISTS content
 CREATE INDEX IF NOT EXISTS idx_content_status ON content (status);
 CREATE INDEX IF NOT EXISTS idx_content_category ON content (category_id);
 CREATE INDEX IF NOT EXISTS idx_content_area ON content (area);
+
+-- 已有数据库升级：补充城市字段
+ALTER TABLE content ADD COLUMN IF NOT EXISTS city_code VARCHAR(32) DEFAULT 'hangzhou';
+CREATE INDEX IF NOT EXISTS idx_content_city ON content (city_code);
+UPDATE content SET city_code = 'hangzhou' WHERE city_code IS NULL;
+
+CREATE TABLE IF NOT EXISTS city
+(
+    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+    code        VARCHAR(32) NOT NULL,
+    name        VARCHAR(32) NOT NULL,
+    country     VARCHAR(32),
+    longitude   DECIMAL(10, 6) NOT NULL,
+    latitude    DECIMAL(10, 6) NOT NULL,
+    has_content INT DEFAULT 0,
+    enabled     INT DEFAULT 1,
+    sort        INT DEFAULT 0
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_city_code ON city (code);
 
 CREATE TABLE IF NOT EXISTS content_tag
 (

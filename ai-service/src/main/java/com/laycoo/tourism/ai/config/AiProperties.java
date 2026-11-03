@@ -23,6 +23,16 @@ public class AiProperties {
 
     private double temperature = 0.8;
 
+    /** 行程规划最多天数 */
+    private int maxDays = 7;
+
+    /** DeepSeek 调用失败时，是否用内置模板兜底 */
+    private boolean planFallbackEnabled = true;
+
+    private int guestDailyLimit = 3;
+
+    private int userDailyLimit = 10;
+
     public boolean llmEnabled() {
         return apiKey != null && !apiKey.isBlank();
     }

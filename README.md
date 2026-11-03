@@ -26,10 +26,10 @@ IDEA 会把根目录 [pom.xml](pom.xml) 识别为 Maven 多模块项目。
 common/              # 公共模块：统一响应、异常、JWT、用户上下文
 gateway-service/     # 网关：路由、鉴权、CORS
 user-service/        # 用户、角色
-content-service/     # 内容、分类、标签、搜索、审核
+content-service/     # 内容、城市、分类、标签、搜索、审核
 interaction-service/ # 收藏、点赞、评论、评分
 recommend-service/   # 推荐、榜单、相似内容
-ai-service/          # AI 内容生成、审核辅助
+ai-service/          # AI 内容生成、多日行程规划、审核辅助
 scripts/             # 启动、停止、冒烟测试
 docs/                # 技术方案与接口样例
 ```
@@ -68,6 +68,40 @@ http://localhost:8080/actuator/health
 http://localhost:8080/api/v1/content/list?page=1&size=3
 ```
 
+## AI 多日行程规划
+
+新增能力：
+
+- `GET /api/v1/city/list`：世界地图城市与经纬度
+- `POST /api/v1/plan/generate`：城市 + 开始/结束日期 + 偏好 → 异步生成行程
+- `GET /api/v1/plan/{planNo}`：轮询状态 / 获取结果
+- `POST /api/v1/plan/{planNo}/retry`：失败重试
+- `GET /internal/content/plan-context`：content-service 向 ai-service 提供内容上下文
+
+默认使用 DeepSeek：
+
+```yaml
+ai:
+  provider: deepseek
+  base-url: https://api.deepseek.com
+  model: deepseek-chat
+```
+
+### 配置 DeepSeek Key
+
+不要把 Key 写进代码或提交到 Git。本地开发推荐：
+
+1. 复制 [.env.example](.env.example) 为 `.env.local`
+2. 填写 `AI_API_KEY=你的新 Key`
+3. 重新执行 `scripts\start-backend.cmd`
+
+`.env.local` 已在 `.gitignore` 中。IDEA 运行时请在 Run Configuration 的
+Environment variables 里配置 `AI_API_KEY`。
+
+未配置 Key 时自动使用 `MockPlanGenerator`，仍可完整演示多日行程流程。
+
+> Key 一旦在聊天、日志或截图中泄露，请立即到 DeepSeek 控制台吊销并重新生成。
+
 ## 数据库与配置
 
 - 每个服务使用独立 H2 文件库，位于根目录 `data/`。
@@ -80,7 +114,7 @@ http://localhost:8080/api/v1/content/list?page=1&size=3
 | 变量 | 说明 |
 | --- | --- |
 | `JWT_SECRET` | JWT 密钥，生产环境必须替换 |
-| `AI_API_KEY` | 大模型 Key；不配置时使用内置模板生成器 |
+| `AI_API_KEY` | DeepSeek Key；不配置时使用内置模板生成器 |
 | `AI_BASE_URL` / `AI_MODEL` | OpenAI 兼容地址与模型名 |
 | `DB_DIR` | H2 数据目录，默认 `./data` |
 

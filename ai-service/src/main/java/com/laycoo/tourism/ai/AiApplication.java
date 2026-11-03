@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication(scanBasePackages = "com.laycoo.tourism")
-@MapperScan("com.laycoo.tourism.ai.mapper")
+@MapperScan({"com.laycoo.tourism.ai.mapper", "com.laycoo.tourism.ai.plan.mapper"})
 @EnableFeignClients(basePackages = "com.laycoo.tourism.ai.feign")
 @ConfigurationPropertiesScan("com.laycoo.tourism.ai.config")
 public class AiApplication {

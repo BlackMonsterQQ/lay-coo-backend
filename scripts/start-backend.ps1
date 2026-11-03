@@ -20,6 +20,21 @@ $dataDir = Join-Path $root 'data'
 New-Item -ItemType Directory -Force -Path $logDir, $dataDir | Out-Null
 $env:DB_DIR = $dataDir
 
+# 读取本地未跟踪的环境变量文件（.env.local），用于注入 DeepSeek Key 等敏感配置
+$envFile = Join-Path $root '.env.local'
+if (Test-Path $envFile) {
+    Get-Content $envFile -Encoding UTF8 | ForEach-Object {
+        if ($_ -match '^\s*#' -or -not $_.Trim()) { return }
+        if ($_ -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$') {
+            $name = $matches[1]
+            $value = $matches[2].Trim()
+            if (-not [Environment]::GetEnvironmentVariable($name, 'Process')) {
+                [Environment]::SetEnvironmentVariable($name, $value, 'Process')
+            }
+        }
+    }
+}
+
 function Test-PortOpen([int]$port) {
     $client = New-Object System.Net.Sockets.TcpClient
     try {

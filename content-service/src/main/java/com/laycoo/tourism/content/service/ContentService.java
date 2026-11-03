@@ -14,6 +14,7 @@ import com.laycoo.tourism.content.dto.ContentDetailVO;
 import com.laycoo.tourism.content.dto.ContentQuery;
 import com.laycoo.tourism.content.dto.ContentSaveRequest;
 import com.laycoo.tourism.content.dto.InternalCreateRequest;
+import com.laycoo.tourism.content.dto.PlanContextItem;
 import com.laycoo.tourism.content.dto.StatsRequest;
 import com.laycoo.tourism.content.entity.Category;
 import com.laycoo.tourism.content.entity.Content;
@@ -111,6 +112,9 @@ public class ContentService {
         }
         if (StringUtils.hasText(query.getArea())) {
             wrapper.eq("area", query.getArea());
+        }
+        if (StringUtils.hasText(query.getCityCode())) {
+            wrapper.eq("city_code", query.getCityCode());
         }
         if (StringUtils.hasText(query.getTag())) {
             wrapper.exists("SELECT 1 FROM content_tag ct JOIN tag t ON ct.tag_id = t.id"
@@ -284,6 +288,82 @@ public class ContentService {
         return toCards(list);
     }
 
+    /**
+     * 给 AI 行程规划提供的精简内容上下文。
+     * 只返回已发布内容，按偏好匹配度和热度排序。
+     */
+    public List<PlanContextItem> planContext(String cityCode, List<String> preferences, int limit) {
+        int size = Math.min(Math.max(limit, 1), 60);
+        LambdaQueryWrapper<Content> wrapper = new LambdaQueryWrapper<Content>()
+                .eq(Content::getStatus, STATUS_PUBLISHED);
+        if (StringUtils.hasText(cityCode)) {
+            wrapper.eq(Content::getCityCode, cityCode);
+        }
+        wrapper.last("ORDER BY " + HOT_ORDER + " DESC, publish_time DESC LIMIT 240");
+        List<Content> contents = contentMapper.selectList(wrapper);
+        if (contents.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, Category> categories = categories().stream()
+                .collect(Collectors.toMap(Category::getId, Function.identity(), (a, b) -> a));
+        Map<Long, List<String>> tags = loadTags(contents.stream().map(Content::getId).toList());
+        List<String> prefs = preferences == null ? List.of() : preferences.stream()
+                .filter(StringUtils::hasText).map(String::trim).toList();
+
+        return contents.stream()
+                .map(content -> {
+                    Category category = categories.get(content.getCategoryId());
+                    List<String> contentTags = tags.getOrDefault(content.getId(), List.of());
+                    double score = preferenceScore(category, contentTags, prefs)
+                            + (content.getRating() == null ? 0 : content.getRating().doubleValue()) * 0.5;
+                    PlanContextItem item = new PlanContextItem();
+                    item.setId(content.getId());
+                    item.setTitle(content.getTitle());
+                    item.setCategoryName(category == null ? "" : category.getName());
+                    item.setCategoryCode(category == null ? "" : category.getCode());
+                    item.setCityCode(content.getCityCode());
+                    item.setArea(content.getArea());
+                    item.setSummary(content.getSummary());
+                    item.setTags(contentTags);
+                    item.setOpeningHours(content.getOpeningHours());
+                    item.setPriceRange(content.getPriceRange());
+                    item.setRating(content.getRating());
+                    return Map.entry(score, item);
+                })
+                .sorted(Map.Entry.<Double, PlanContextItem>comparingByKey().reversed())
+                .limit(size)
+                .map(Map.Entry::getValue)
+                .toList();
+    }
+
+    private double preferenceScore(Category category, List<String> tags, List<String> preferences) {
+        if (preferences == null || preferences.isEmpty()) {
+            return 0;
+        }
+        double score = 0;
+        for (String preference : preferences) {
+            if (tags.stream().anyMatch(tag -> tag.contains(preference) || preference.contains(tag))) {
+                score += 2;
+            }
+            if (category != null && (category.getName().contains(preference)
+                    || preference.contains(category.getName()))) {
+                score += 2;
+            }
+            if (category != null && "美食".equals(preference) && "FOOD".equals(category.getCode())) {
+                score += 2;
+            }
+            if (category != null && "人文历史".equals(preference)
+                    && ("HUMANITY".equals(category.getType()))) {
+                score += 1;
+            }
+            if (category != null && "自然风光".equals(preference)
+                    && ("SPOT".equals(category.getCode()) || "PLAY".equals(category.getCode()))) {
+                score += 1;
+            }
+        }
+        return score;
+    }
+
     public void applyStats(Long id, StatsRequest request) {
         Content content = contentMapper.selectById(id);
         if (content == null) {
@@ -371,6 +451,7 @@ public class ContentService {
         content.setSummary(request.getSummary());
         content.setCategoryId(category.getId());
         content.setArea(request.getArea());
+        content.setCityCode(StringUtils.hasText(request.getCityCode()) ? request.getCityCode() : "hangzhou");
         content.setAddress(request.getAddress());
         content.setBody(request.getBody());
         content.setHighlights(writeHighlights(request.getHighlights()));

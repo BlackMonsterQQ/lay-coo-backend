@@ -36,9 +36,13 @@ ai:
   base-url: ${AI_BASE_URL:https://api.deepseek.com}
   api-key: ${AI_API_KEY:}
   model: ${AI_MODEL:deepseek-chat}
-  timeout-seconds: ${AI_TIMEOUT_SECONDS:60}
+  timeout-seconds: ${AI_TIMEOUT_SECONDS:90}
   count-limit: 5
   temperature: 0.8
+  max-days: ${AI_MAX_DAYS:7}
+  plan-fallback-enabled: ${AI_PLAN_FALLBACK:true}
+  guest-daily-limit: ${AI_GUEST_DAILY_LIMIT:3}
+  user-daily-limit: ${AI_USER_DAILY_LIMIT:10}
 
 mybatis-plus:
   configuration:

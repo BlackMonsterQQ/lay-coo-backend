@@ -4,6 +4,7 @@ import com.laycoo.tourism.common.api.ApiResponse;
 import com.laycoo.tourism.common.dto.ContentCard;
 import com.laycoo.tourism.content.dto.ContentDetailVO;
 import com.laycoo.tourism.content.dto.InternalCreateRequest;
+import com.laycoo.tourism.content.dto.PlanContextItem;
 import com.laycoo.tourism.content.dto.StatsRequest;
 import com.laycoo.tourism.content.service.ContentService;
 import jakarta.validation.Valid;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -36,6 +38,20 @@ public class InternalContentController {
     @GetMapping("/candidates")
     public ApiResponse<List<ContentCard>> candidates(@RequestParam(defaultValue = "200") int limit) {
         return ApiResponse.ok(contentService.candidates(limit));
+    }
+
+    @GetMapping("/plan-context")
+    public ApiResponse<List<PlanContextItem>> planContext(
+            @RequestParam String cityCode,
+            @RequestParam(required = false) String preferences,
+            @RequestParam(defaultValue = "30") int limit) {
+        List<String> prefs = preferences == null || preferences.isBlank()
+                ? List.of()
+                : Arrays.stream(preferences.split(","))
+                        .map(String::trim)
+                        .filter(value -> !value.isEmpty())
+                        .toList();
+        return ApiResponse.ok(contentService.planContext(cityCode, prefs, limit));
     }
 
     @GetMapping("/{id}")

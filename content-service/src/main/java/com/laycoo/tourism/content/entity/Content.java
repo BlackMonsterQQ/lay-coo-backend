@@ -24,6 +24,8 @@ public class Content {
 
     private String area;
 
+    private String cityCode;
+
     private String address;
 
     private String body;

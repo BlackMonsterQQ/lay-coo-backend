@@ -13,6 +13,8 @@ public class ContentQuery {
 
     private String area;
 
+    private String cityCode;
+
     private String tag;
 
     private String keyword;

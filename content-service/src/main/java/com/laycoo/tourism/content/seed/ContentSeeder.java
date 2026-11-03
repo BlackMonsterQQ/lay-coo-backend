@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -35,6 +36,7 @@ import java.util.Set;
  */
 @Slf4j
 @Component
+@Order(2)
 @RequiredArgsConstructor
 public class ContentSeeder implements ApplicationRunner {
 
@@ -76,6 +78,7 @@ public class ContentSeeder implements ApplicationRunner {
             content.setTitle(seed.getTitle());
             content.setSummary(seed.getSummary());
             content.setCategoryId(category.getId());
+            content.setCityCode("hangzhou");
             content.setArea(seed.getArea());
             content.setAddress(seed.getAddress());
             content.setBody(seed.getBody());
