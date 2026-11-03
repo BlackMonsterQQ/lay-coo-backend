@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +25,7 @@ import java.util.List;
 public class MockPlanGenerator implements PlanGenerator {
 
     private static final String[] TIMES = {"09:00", "11:30", "14:30", "17:30"};
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
     private static final String[] GENERIC_TITLES = {
             "城市地标漫步", "本地风味午餐", "老街与手作", "河畔夜景"
     };
@@ -32,8 +35,23 @@ public class MockPlanGenerator implements PlanGenerator {
     @Override
     public GeneratedPlan generate(TravelPlan plan, List<PlanContextItem> context) {
         List<PlanContextItem> items = context == null ? List.of() : context;
+        List<PlanContextItem> foods = items.stream()
+                .filter(item -> "FOOD".equals(item.getCategoryCode()))
+                .toList();
+        List<PlanContextItem> spots = items.stream()
+                .filter(item -> List.of("SPOT", "HERITAGE", "FIGURE", "FOLK", "PLAY")
+                        .contains(item.getCategoryCode()))
+                .toList();
+        List<PlanContextItem> experiences = items.stream()
+                .filter(item -> List.of("INTANGIBLE", "SHOP", "STAY").contains(item.getCategoryCode()))
+                .toList();
+        PlanContextItem leadSpot = pick(spots, 0);
+        PlanContextItem leadFood = pick(foods, 0);
+        String theme = leadSpot == null ? "城市漫游" : leadSpot.getTitle();
+        if (leadFood != null && !theme.contains(leadFood.getTitle())) {
+            theme += " + " + leadFood.getTitle();
+        }
         ObjectNode root = objectMapper.createObjectNode();
-        String theme = items.isEmpty() ? "城市漫游" : items.get(0).getCategoryName() + "与城市日常";
         root.put("title", plan.getCityName() + " " + plan.getDayCount() + " 日：" + theme);
         root.put("summary", "这是一份为「" + plan.getCityName() + "」定制的 " + plan.getDayCount()
                 + " 天行程，围绕你选择的偏好安排每日节奏，适合慢慢走、慢慢看，具体开放时间以现场为准。");
@@ -57,32 +75,29 @@ public class MockPlanGenerator implements PlanGenerator {
         }
 
         ArrayNode days = root.putArray("days");
-        List<PlanContextItem> foods = items.stream()
-                .filter(item -> "FOOD".equals(item.getCategoryCode()))
-                .toList();
-        List<PlanContextItem> spots = items.stream()
-                .filter(item -> List.of("SPOT", "HERITAGE", "FIGURE", "FOLK", "PLAY")
-                        .contains(item.getCategoryCode()))
-                .toList();
-        List<PlanContextItem> experiences = items.stream()
-                .filter(item -> List.of("INTANGIBLE", "SHOP", "STAY").contains(item.getCategoryCode()))
-                .toList();
         for (int dayIndex = 0; dayIndex < plan.getDayCount(); dayIndex++) {
             LocalDate date = plan.getStartDate().plusDays(dayIndex);
             ObjectNode day = days.addObject();
             day.put("day", dayIndex + 1);
             day.put("date", date.toString());
-            PlanContextItem themeItem = pick(spots, dayIndex);
-            if (themeItem == null) {
-                themeItem = pick(items, dayIndex);
-            }
-            String dayTheme = themeItem == null
+            PlanContextItem daySpot = pick(spots, dayIndex);
+            PlanContextItem dayFood = pick(foods, dayIndex);
+            String dayTheme = daySpot == null
                     ? (dayIndex == 0 ? "初见这座城市" : "城市慢漫游")
-                    : themeItem.getCategoryName() + "的一天";
+                    : daySpot.getTitle();
+            if (dayFood != null) {
+                dayTheme += " + " + dayFood.getTitle();
+            }
             day.put("theme", dayTheme);
             day.put("summary", "围绕" + dayTheme + "安排，上午轻松出发，中午留出吃饭时间，下午看一处人文或街区，傍晚收尾。");
+            day.put("startTime", "08:40");
+            day.put("endTime", "19:00");
+            day.put("startPoint", "酒店");
+            List<String> routeStops = new ArrayList<>();
+            routeStops.add("酒店");
 
             ArrayNode timeline = day.putArray("timeline");
+            String previousTitle = "酒店";
             for (int i = 0; i < TIMES.length; i++) {
                 PlanContextItem item = switch (i) {
                     case 0 -> pick(spots, dayIndex);
@@ -93,11 +108,19 @@ public class MockPlanGenerator implements PlanGenerator {
                 if (item == null) {
                     item = pick(items, dayIndex * 4 + i);
                 }
+                String title = item == null ? GENERIC_TITLES[i] : item.getTitle();
+                LocalTime arrival = LocalTime.parse(TIMES[i]);
+                int duration = i == 1 ? 75 : 90;
                 ObjectNode node = timeline.addObject();
                 node.put("time", TIMES[i]);
-                node.put("durationMinutes", i == 1 ? 75 : 90);
+                node.put("departureTime", arrival.minusMinutes(20).format(TIME_FORMAT));
+                node.put("arrivalTime", TIMES[i]);
+                node.put("from", previousTitle);
+                node.put("transport", i == 0 ? "打车" : "步行 / 打车");
+                node.put("travelMinutes", 20);
+                node.put("durationMinutes", duration);
                 node.put("type", typeOf(item, i));
-                node.put("title", item == null ? GENERIC_TITLES[i] : item.getTitle());
+                node.put("title", title);
                 node.put("area", item == null ? "" : item.getArea());
                 node.put("address", "");
                 String description = item == null
@@ -111,7 +134,10 @@ public class MockPlanGenerator implements PlanGenerator {
                 if (item != null && item.getId() != null) {
                     node.put("sourceContentId", item.getId());
                 }
+                previousTitle = title;
+                routeStops.add(title);
             }
+            day.put("routeSummary", String.join(" → ", routeStops));
 
             ArrayNode food = day.putArray("food");
             if (foods.isEmpty()) {

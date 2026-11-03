@@ -45,6 +45,8 @@ public class DeepSeekPlanGenerator implements PlanGenerator {
             12. theme 概括当天区域与主题，例如“西湖东岸 + 灵隐寺 + 杭帮菜”，不要只写“城市日常”。
             13. 必须规划出发地到目的地的去程与返程交通。不要编造具体车次号、航班号或精确票价；
                 给出交通方式、建议出发/到达时段、班次类型和注意事项，并注明以 12306 / 航司实时信息为准。
+            14. 每一天必须写出当天出发时间、每一段交通方式与耗时、到达景点/餐厅的时间、停留时长和结束时间，
+                让用户可以直接照着时间轴走完一整天。
 
             JSON 顶层字段：
             title, summary, city, startDate, endDate, dayCount, preferences,
@@ -70,10 +72,19 @@ public class DeepSeekPlanGenerator implements PlanGenerator {
             里程、耗时、过路费、油费均写“约”，并注明以导航和现场为准。
 
             days[i] 字段：
-            day, date, theme, summary, timeline, food, transport
+            day, date, theme, summary, startTime, endTime, startPoint, routeSummary, timeline, food, transport
+
+            startTime / endTime 使用 HH:mm，表示当天从酒店/起点出发和回到酒店/结束的时间。
+            startPoint 写当天起点（酒店/车站），routeSummary 写完整路线，例如“酒店 → 灵隐寺 → 茶人村 → 苏堤 → 酒店”。
 
             timeline[j] 字段：
+            departureTime, arrivalTime, from, transport, travelMinutes,
             time, durationMinutes, type, title, area, address, description, tips, sourceContentId
+
+            departureTime 是离开上一地点的时间，arrivalTime 是到达当前景点/餐厅的时间，time 必须等于 arrivalTime。
+            transport 写具体交通方式（步行/地铁/打车/公交），travelMinutes 写路上耗时；
+            当天第一个节点的 departureTime 必须等于 startTime，最后一个节点的到达 + 停留时间不得超过 endTime。
+            下一节点的 departureTime 必须晚于上一节点的到达 + 停留时间，不能出现时间重叠。
 
             type 只能是：SPOT / FOOD / EXPERIENCE / SHOP / REST / OTHER。
             time 使用 HH:mm，24 小时制。

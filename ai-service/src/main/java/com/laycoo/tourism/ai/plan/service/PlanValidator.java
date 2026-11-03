@@ -57,26 +57,69 @@ public class PlanValidator {
             if (!StringUtils.hasText(text(day, "theme"))) {
                 throw new PlanGenerationException("第 " + (i + 1) + " 天缺少主题");
             }
+            String dayStartText = text(day, "startTime");
+            String dayEndText = text(day, "endTime");
+            if (!StringUtils.hasText(dayStartText) || !StringUtils.hasText(dayEndText)
+                    || !StringUtils.hasText(text(day, "startPoint"))
+                    || !StringUtils.hasText(text(day, "routeSummary"))) {
+                throw new PlanGenerationException("第 " + (i + 1) + " 天缺少出发/结束时间或路线说明");
+            }
+            LocalTime dayStart = parseTime(dayStartText, "第 " + (i + 1) + " 天出发时间");
+            LocalTime dayEnd = parseTime(dayEndText, "第 " + (i + 1) + " 天结束时间");
+            if (!dayEnd.isAfter(dayStart)) {
+                throw new PlanGenerationException("第 " + (i + 1) + " 天结束时间必须晚于出发时间");
+            }
             JsonNode timeline = day.get("timeline");
             if (timeline == null || !timeline.isArray() || timeline.size() < 3 || timeline.size() > 7) {
                 throw new PlanGenerationException("第 " + (i + 1) + " 天安排数量不合法，至少要有 3 个具体安排");
             }
             totalNodes += timeline.size();
             LocalTime previous = null;
+            LocalTime previousEnd = null;
+            boolean firstNode = true;
             boolean hasFood = false;
             boolean hasPlace = false;
+            LocalTime lastEnd = dayStart;
             for (JsonNode item : timeline) {
                 String time = text(item, "time");
-                LocalTime parsed;
-                try {
-                    parsed = LocalTime.parse(time);
-                } catch (DateTimeParseException e) {
-                    throw new PlanGenerationException("行程时间格式错误: " + time);
+                LocalTime parsed = parseTime(time, "行程时间");
+                String departureText = text(item, "departureTime");
+                String arrivalText = text(item, "arrivalTime");
+                if (!StringUtils.hasText(departureText) || !StringUtils.hasText(arrivalText)) {
+                    throw new PlanGenerationException("行程节点缺少出发/到达时间");
+                }
+                LocalTime departure = parseTime(departureText, "出发时间");
+                LocalTime arrival = parseTime(arrivalText, "到达时间");
+                if (departure.isAfter(arrival)) {
+                    throw new PlanGenerationException("行程节点出发时间不能晚于到达时间");
+                }
+                if (!arrival.equals(parsed)) {
+                    throw new PlanGenerationException("行程节点到达时间与 time 不一致");
+                }
+                if (firstNode && !departure.equals(dayStart)) {
+                    throw new PlanGenerationException("第 " + (i + 1) + " 天第一个节点出发时间必须等于 startTime");
+                }
+                if (!StringUtils.hasText(text(item, "from"))
+                        || !StringUtils.hasText(text(item, "transport"))) {
+                    throw new PlanGenerationException("行程节点缺少出发地或交通方式");
+                }
+                if (!item.has("travelMinutes") || !item.has("durationMinutes")) {
+                    throw new PlanGenerationException("行程节点缺少交通耗时或停留时长");
+                }
+                int travelMinutes = item.path("travelMinutes").asInt(-1);
+                int duration = item.path("durationMinutes").asInt(0);
+                if (travelMinutes < 0 || duration <= 0) {
+                    throw new PlanGenerationException("行程节点时长不合法");
+                }
+                if (previousEnd != null && departure.isBefore(previousEnd)) {
+                    throw new PlanGenerationException("第 " + (i + 1) + " 天行程时间发生重叠");
                 }
                 if (previous != null && !parsed.isAfter(previous)) {
                     throw new PlanGenerationException("第 " + (i + 1) + " 天时间顺序不正确");
                 }
                 previous = parsed;
+                previousEnd = arrival.plusMinutes(duration);
+                lastEnd = previousEnd;
                 if (!StringUtils.hasText(text(item, "title"))) {
                     throw new PlanGenerationException("行程节点缺少标题");
                 }
@@ -89,6 +132,10 @@ public class PlanValidator {
                 }
                 hasFood = hasFood || "FOOD".equals(type);
                 hasPlace = hasPlace || "SPOT".equals(type) || "EXPERIENCE".equals(type);
+                firstNode = false;
+            }
+            if (lastEnd.isAfter(dayEnd)) {
+                throw new PlanGenerationException("第 " + (i + 1) + " 天最后一个安排超过结束时间");
             }
             if (!hasFood || !hasPlace) {
                 throw new PlanGenerationException("第 " + (i + 1) + " 天需要同时包含具体景点/体验和餐饮安排");
@@ -105,6 +152,14 @@ public class PlanValidator {
         }
         if (totalNodes > 56) {
             throw new PlanGenerationException("行程节点过多");
+        }
+    }
+
+    private LocalTime parseTime(String value, String label) {
+        try {
+            return LocalTime.parse(value);
+        } catch (DateTimeParseException e) {
+            throw new PlanGenerationException(label + "格式错误: " + value);
         }
     }
 
