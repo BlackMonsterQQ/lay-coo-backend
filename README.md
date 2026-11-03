@@ -72,7 +72,8 @@ http://localhost:8080/api/v1/content/list?page=1&size=3
 
 新增能力：
 
-- `GET /api/v1/city/list`：世界地图城市与经纬度
+- `GET /api/v1/city/list`：国内 339 个地级及以上城市（含港澳）与经纬度
+- 城市坐标种子在 `content-service/src/main/resources/seed/city-seed.json`，来源说明见同目录 `README.md`
 - `POST /api/v1/plan/generate`：城市 + 开始/结束日期 + 偏好 → 异步生成行程
 - `GET /api/v1/plan/{planNo}`：轮询状态 / 获取结果
 - `POST /api/v1/plan/{planNo}/retry`：失败重试

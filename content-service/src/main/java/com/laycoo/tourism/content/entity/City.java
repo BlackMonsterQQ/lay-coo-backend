@@ -18,6 +18,8 @@ public class City {
 
     private String name;
 
+    private String province;
+
     private String country;
 
     private BigDecimal longitude;

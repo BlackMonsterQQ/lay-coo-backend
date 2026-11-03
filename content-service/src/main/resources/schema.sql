@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS city
     id          BIGINT AUTO_INCREMENT PRIMARY KEY,
     code        VARCHAR(32) NOT NULL,
     name        VARCHAR(32) NOT NULL,
+    province    VARCHAR(64),
     country     VARCHAR(32),
     longitude   DECIMAL(10, 6) NOT NULL,
     latitude    DECIMAL(10, 6) NOT NULL,
@@ -71,6 +72,8 @@ CREATE TABLE IF NOT EXISTS city
     enabled     INT DEFAULT 1,
     sort        INT DEFAULT 0
 );
+
+ALTER TABLE city ADD COLUMN IF NOT EXISTS province VARCHAR(64);
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_city_code ON city (code);
 
