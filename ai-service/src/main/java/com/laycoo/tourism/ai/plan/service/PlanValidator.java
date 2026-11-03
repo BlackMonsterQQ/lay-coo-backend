@@ -58,11 +58,13 @@ public class PlanValidator {
                 throw new PlanGenerationException("第 " + (i + 1) + " 天缺少主题");
             }
             JsonNode timeline = day.get("timeline");
-            if (timeline == null || !timeline.isArray() || timeline.size() < 2 || timeline.size() > 8) {
-                throw new PlanGenerationException("第 " + (i + 1) + " 天安排数量不合法");
+            if (timeline == null || !timeline.isArray() || timeline.size() < 3 || timeline.size() > 7) {
+                throw new PlanGenerationException("第 " + (i + 1) + " 天安排数量不合法，至少要有 3 个具体安排");
             }
             totalNodes += timeline.size();
             LocalTime previous = null;
+            boolean hasFood = false;
+            boolean hasPlace = false;
             for (JsonNode item : timeline) {
                 String time = text(item, "time");
                 LocalTime parsed;
@@ -84,6 +86,20 @@ public class PlanValidator {
                 }
                 if (text(item, "description").length() < 10) {
                     throw new PlanGenerationException("行程节点描述过短");
+                }
+                hasFood = hasFood || "FOOD".equals(type);
+                hasPlace = hasPlace || "SPOT".equals(type) || "EXPERIENCE".equals(type);
+            }
+            if (!hasFood || !hasPlace) {
+                throw new PlanGenerationException("第 " + (i + 1) + " 天需要同时包含具体景点/体验和餐饮安排");
+            }
+            JsonNode foods = day.get("food");
+            if (foods == null || !foods.isArray() || foods.isEmpty()) {
+                throw new PlanGenerationException("第 " + (i + 1) + " 天缺少具体餐饮推荐");
+            }
+            for (JsonNode food : foods) {
+                if (!StringUtils.hasText(text(food, "name"))) {
+                    throw new PlanGenerationException("第 " + (i + 1) + " 天餐饮推荐缺少店名/菜名");
                 }
             }
         }
