@@ -24,6 +24,9 @@ CREATE TABLE IF NOT EXISTS travel_plan
     user_id       BIGINT,
     city_code     VARCHAR(32) NOT NULL,
     city_name     VARCHAR(32) NOT NULL,
+    origin_city_code VARCHAR(32),
+    origin_city_name VARCHAR(32),
+    transport_preference VARCHAR(16) DEFAULT 'AUTO',
     start_date    DATE NOT NULL,
     end_date      DATE NOT NULL,
     day_count     INT NOT NULL,
@@ -46,3 +49,8 @@ CREATE TABLE IF NOT EXISTS travel_plan
 CREATE UNIQUE INDEX IF NOT EXISTS uk_travel_plan_no ON travel_plan (plan_no);
 CREATE INDEX IF NOT EXISTS idx_travel_plan_user ON travel_plan (user_id);
 CREATE INDEX IF NOT EXISTS idx_travel_plan_hash ON travel_plan (request_hash);
+
+-- 已有数据库升级：出发地与交通偏好
+ALTER TABLE travel_plan ADD COLUMN IF NOT EXISTS origin_city_code VARCHAR(32);
+ALTER TABLE travel_plan ADD COLUMN IF NOT EXISTS origin_city_name VARCHAR(32);
+ALTER TABLE travel_plan ADD COLUMN IF NOT EXISTS transport_preference VARCHAR(16) DEFAULT 'AUTO';

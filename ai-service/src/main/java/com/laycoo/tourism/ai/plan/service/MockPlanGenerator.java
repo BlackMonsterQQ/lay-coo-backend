@@ -44,6 +44,13 @@ public class MockPlanGenerator implements PlanGenerator {
         ArrayNode prefs = root.putArray("preferences");
         parsePreferences(plan).forEach(prefs::add);
 
+        ObjectNode intercity = root.putObject("intercityTransport");
+        intercity.set("outbound", transportLeg(plan, plan.getOriginCityName(), plan.getCityName(),
+                plan.getStartDate().toString(), true));
+        intercity.set("return", transportLeg(plan, plan.getCityName(), plan.getOriginCityName(),
+                plan.getEndDate().toString(), false));
+        intercity.put("note", "以上为 AI 参考交通方案，具体车次、航班、票价与余票请以 12306 或航空公司实时信息为准。");
+
         ArrayNode days = root.putArray("days");
         List<PlanContextItem> foods = items.stream()
                 .filter(item -> "FOOD".equals(item.getCategoryCode()))
@@ -146,6 +153,39 @@ public class MockPlanGenerator implements PlanGenerator {
         warnings.add("节假日人流较多，建议提前规划交通。");
 
         return new GeneratedPlan(root, "mock-plan-v1", 0L, "内置模板生成器");
+    }
+
+    private ObjectNode transportLeg(TravelPlan plan, String from, String to, String date, boolean outbound) {
+        ObjectNode leg = objectMapper.createObjectNode();
+        String preference = plan.getTransportPreference() == null ? "AUTO" : plan.getTransportPreference();
+        String mode = switch (preference) {
+            case "TRAIN" -> "TRAIN";
+            case "FLIGHT" -> "FLIGHT";
+            default -> "MIXED";
+        };
+        leg.put("date", date);
+        leg.put("mode", mode);
+        leg.put("title", from + " → " + to);
+        leg.put("duration", "高铁约 4-7 小时 / 航班约 2-3 小时（含往返机场）");
+        leg.put("departureWindow", outbound ? "07:00-09:00" : "16:00-18:00");
+        leg.put("arrivalWindow", outbound ? "11:00-15:00" : "19:00-22:00");
+        ArrayNode options = leg.putArray("options");
+        if (!"FLIGHT".equals(preference)) {
+            options.addObject()
+                    .put("type", "高铁")
+                    .put("label", outbound ? "G 字头早班" : "G 字头傍晚班")
+                    .put("note", "建议提前 30 分钟到站，具体车次与票价以 12306 为准");
+        }
+        if (!"TRAIN".equals(preference)) {
+            options.addObject()
+                    .put("type", "航班")
+                    .put("label", outbound ? "早班直飞" : "傍晚直飞")
+                    .put("note", "建议提前 2 小时到机场，具体航班以航司为准");
+        }
+        leg.put("tip", outbound
+                ? "优先选择上午出发，给抵达后的入住和第一段行程留出时间。"
+                : "返程建议留出 2 小时以上缓冲，避免行程收尾太赶。");
+        return leg;
     }
 
     private PlanContextItem pick(List<PlanContextItem> list, int index) {

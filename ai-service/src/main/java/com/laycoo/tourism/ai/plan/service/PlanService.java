@@ -51,6 +51,10 @@ public class PlanService {
 
     public PlanGenerateResponse create(PlanGenerateRequest request, Long userId, String ip) {
         CityInfo city = loadCity(request.getCityCode());
+        CityInfo origin = loadCity(request.getOriginCityCode());
+        if (city.getCode().equals(origin.getCode())) {
+            throw new BusinessException(40010, "出发城市不能与目的地相同");
+        }
         LocalDate today = LocalDate.now();
         if (request.getStartDate().isBefore(today)) {
             throw new BusinessException(40006, "开始日期不能早于今天");
@@ -74,13 +78,14 @@ public class PlanService {
         if (extraNote.length() > 100) {
             throw new BusinessException(40009, "补充说明最多 100 个字符");
         }
+        String transportPreference = normalizeTransport(request.getTransportPreference());
 
         if (!rateLimiter.allow(userId, ip)) {
             throw new BusinessException(42901, "今日生成次数已用完，请明天再试");
         }
 
-        String hash = hash(city.getCode(), request.getStartDate(), request.getEndDate(),
-                preferences, extraNote);
+        String hash = hash(city.getCode(), origin.getCode(), transportPreference,
+                request.getStartDate(), request.getEndDate(), preferences, extraNote);
         TravelPlan existing = findRecent(hash);
         if (existing != null) {
             return response(existing);
@@ -91,6 +96,9 @@ public class PlanService {
         plan.setUserId(userId);
         plan.setCityCode(city.getCode());
         plan.setCityName(city.getName());
+        plan.setOriginCityCode(origin.getCode());
+        plan.setOriginCityName(origin.getName());
+        plan.setTransportPreference(transportPreference);
         plan.setStartDate(request.getStartDate());
         plan.setEndDate(request.getEndDate());
         plan.setDayCount(dayCount);
@@ -114,6 +122,9 @@ public class PlanService {
         response.setStatus(plan.getStatus());
         response.setCity(plan.getCityName());
         response.setCityCode(plan.getCityCode());
+        response.setOriginCity(plan.getOriginCityName());
+        response.setOriginCityCode(plan.getOriginCityCode());
+        response.setTransportPreference(plan.getTransportPreference());
         response.setStartDate(plan.getStartDate());
         response.setEndDate(plan.getEndDate());
         response.setDayCount(plan.getDayCount());
@@ -239,9 +250,22 @@ public class PlanService {
         throw new BusinessException(50001, "生成行程编号失败，请重试");
     }
 
-    private String hash(String cityCode, LocalDate startDate, LocalDate endDate,
+    private String normalizeTransport(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "AUTO";
+        }
+        String normalized = value.trim().toUpperCase();
+        return switch (normalized) {
+            case "FLIGHT", "TRAIN", "BOTH", "AUTO" -> normalized;
+            default -> "AUTO";
+        };
+    }
+
+    private String hash(String cityCode, String originCityCode, String transportPreference,
+                        LocalDate startDate, LocalDate endDate,
                         List<String> preferences, String extraNote) {
-        String raw = cityCode + "|" + startDate + "|" + endDate + "|"
+        String raw = cityCode + "|" + originCityCode + "|" + transportPreference + "|"
+                + startDate + "|" + endDate + "|"
                 + String.join(",", preferences) + "|" + extraNote;
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

@@ -16,7 +16,13 @@ public class PlanGenerateRequest {
     @NotBlank(message = "请选择目的地城市")
     private String cityCode;
 
-    @NotNull(message = "请选择开始日期")
+    @NotBlank(message = "请选择出发城市")
+    private String originCityCode;
+
+    /** AUTO / FLIGHT / TRAIN / BOTH */
+    private String transportPreference = "AUTO";
+
+    @NotNull(message = "请选择出发日期")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate startDate;
 

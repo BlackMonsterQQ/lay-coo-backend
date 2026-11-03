@@ -75,7 +75,8 @@ http://localhost:8080/api/v1/content/list?page=1&size=3
 - `GET /api/v1/city/list`：国内 339 个地级及以上城市（含港澳）与经纬度
 - `GET /api/v1/city/{code}/image`：城市地标背景图代理，从 Wikipedia 拉取并缓存到 `data/city-images/`
 - 城市坐标种子在 `content-service/src/main/resources/seed/city-seed.json`，来源说明见同目录 `README.md`
-- `POST /api/v1/plan/generate`：城市 + 开始/结束日期 + 偏好 → 异步生成行程
+- `POST /api/v1/plan/generate`：出发城市 + 目的地 + 出发/返程日期 + 交通偏好 → 异步生成行程
+- 交通偏好支持 `AUTO` / `TRAIN` / `FLIGHT` / `BOTH`；生成结果包含去程/返程参考班次方案
 - `GET /api/v1/plan/{planNo}`：轮询状态 / 获取结果
 - `POST /api/v1/plan/{planNo}/retry`：失败重试
 - `GET /internal/content/plan-context`：content-service 向 ai-service 提供内容上下文

@@ -39,10 +39,23 @@ public class DeepSeekPlanGenerator implements PlanGenerator {
             7. 不要编造门票、电话、营业时间等精确信息；不确定时写“以现场为准”。
             8. 不输出违规、低俗、广告导流内容。
             9. 中文输出，语气克制、具体、有画面感。
+            10. 必须规划出发地到目的地的去程与返程交通。不要编造具体车次号、航班号或精确票价；
+                给出交通方式、建议出发/到达时段、班次类型和注意事项，并注明以 12306 / 航司实时信息为准。
 
             JSON 顶层字段：
             title, summary, city, startDate, endDate, dayCount, preferences,
-            days, budget, rainPlan, packingTips, warnings
+            intercityTransport, days, budget, rainPlan, packingTips, warnings
+
+            intercityTransport 字段：
+            outbound, return, note
+
+            outbound / return 字段：
+            date, mode, title, duration, departureWindow, arrivalWindow, options, tip
+
+            mode 只能是：TRAIN / FLIGHT / MIXED。
+            options 每项：type, label, note。最多 4 项，至少 1 项。
+            outbound.date 必须等于 startDate，return.date 必须等于 endDate。
+            note 写“具体车次、航班、票价与余票以 12306 或航空公司实时信息为准”。
 
             days[i] 字段：
             day, date, theme, summary, timeline, food, transport
@@ -134,14 +147,28 @@ public class DeepSeekPlanGenerator implements PlanGenerator {
             contextJson = "[]";
         }
         String preferences = plan.getPreferences() == null ? "[]" : plan.getPreferences();
-        return "城市：" + plan.getCityName()
-                + "\n开始日期：" + plan.getStartDate()
-                + "\n结束日期：" + plan.getEndDate()
+        return "出发地：" + plan.getOriginCityName()
+                + "\n目的地：" + plan.getCityName()
+                + "\n出发日期：" + plan.getStartDate()
+                + "\n返程日期：" + plan.getEndDate()
+                + "\n交通偏好：" + transportLabel(plan.getTransportPreference())
                 + "\n天数：" + plan.getDayCount() + " 天"
                 + "\n偏好：" + preferences
                 + "\n补充说明：" + (plan.getExtraNote() == null ? "无" : plan.getExtraNote())
                 + "\n\n【本地内容】\n" + contextJson
-                + "\n\n请严格按要求的 JSON 结构输出完整行程。";
+                + "\n\n请严格按要求的 JSON 结构输出完整行程，并包含去程、返程交通方案。";
+    }
+
+    private String transportLabel(String preference) {
+        if (preference == null) {
+            return "不限";
+        }
+        return switch (preference) {
+            case "TRAIN" -> "优先高铁";
+            case "FLIGHT" -> "优先航班";
+            case "BOTH" -> "高铁与航班都给出";
+            default -> "不限，按时间与舒适度选择";
+        };
     }
 
     private int maxTokens(int dayCount) {

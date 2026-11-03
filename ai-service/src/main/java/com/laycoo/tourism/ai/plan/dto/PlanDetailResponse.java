@@ -14,6 +14,9 @@ public class PlanDetailResponse {
     private String status;
     private String city;
     private String cityCode;
+    private String originCity;
+    private String originCityCode;
+    private String transportPreference;
     private LocalDate startDate;
     private LocalDate endDate;
     private int dayCount;

@@ -23,6 +23,12 @@ public class TravelPlan {
 
     private String cityName;
 
+    private String originCityCode;
+
+    private String originCityName;
+
+    private String transportPreference;
+
     private LocalDate startDate;
 
     private LocalDate endDate;

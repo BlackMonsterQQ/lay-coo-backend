@@ -166,6 +166,8 @@ Content-Type: application/json
 
 {
   "cityCode": "hangzhou",
+  "originCityCode": "beijing",
+  "transportPreference": "BOTH",
   "startDate": "2026-11-10",
   "endDate": "2026-11-12",
   "preferences": ["美食", "人文历史"],

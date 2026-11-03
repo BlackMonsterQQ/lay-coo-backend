@@ -35,6 +35,7 @@ public class PlanValidator {
                 || plan.toString().toLowerCase().contains("<iframe")) {
             throw new PlanGenerationException("攻略包含不安全 HTML 内容");
         }
+        validateIntercity(plan, startDate, dayCount);
 
         JsonNode days = plan.get("days");
         if (days == null || !days.isArray() || days.size() != dayCount) {
@@ -91,5 +92,47 @@ public class PlanValidator {
     private String text(JsonNode node, String field) {
         JsonNode value = node == null ? null : node.get(field);
         return value == null || value.isNull() ? "" : value.asText("").trim();
+    }
+
+    private void validateIntercity(JsonNode plan, LocalDate startDate, int dayCount) {
+        JsonNode transport = plan.get("intercityTransport");
+        if (transport == null || !transport.isObject()) {
+            throw new PlanGenerationException("缺少出发地与目的地之间的交通方案");
+        }
+        validateTransportLeg(transport.get("outbound"), startDate, "去程");
+        validateTransportLeg(transport.get("return"),
+                startDate.plusDays(Math.max(0, dayCount - 1)), "返程");
+        String note = text(transport, "note");
+        if (note.length() < 8) {
+            throw new PlanGenerationException("交通方案缺少实时信息提示");
+        }
+    }
+
+    private void validateTransportLeg(JsonNode leg, LocalDate expectedDate, String label) {
+        if (leg == null || !leg.isObject()) {
+            throw new PlanGenerationException(label + "交通方案格式错误");
+        }
+        if (!expectedDate.toString().equals(text(leg, "date"))) {
+            throw new PlanGenerationException(label + "日期不正确");
+        }
+        String mode = text(leg, "mode");
+        if (!Set.of("TRAIN", "FLIGHT", "MIXED").contains(mode)) {
+            throw new PlanGenerationException(label + "交通方式不合法");
+        }
+        if (!StringUtils.hasText(text(leg, "title")) || !StringUtils.hasText(text(leg, "duration"))
+                || !StringUtils.hasText(text(leg, "departureWindow"))
+                || !StringUtils.hasText(text(leg, "arrivalWindow"))) {
+            throw new PlanGenerationException(label + "交通方案信息不完整");
+        }
+        JsonNode options = leg.get("options");
+        if (options == null || !options.isArray() || options.isEmpty() || options.size() > 4) {
+            throw new PlanGenerationException(label + "交通班次选项不合法");
+        }
+        for (JsonNode option : options) {
+            if (!StringUtils.hasText(text(option, "type"))
+                    || !StringUtils.hasText(text(option, "label"))) {
+                throw new PlanGenerationException(label + "交通班次选项缺少信息");
+            }
+        }
     }
 }
