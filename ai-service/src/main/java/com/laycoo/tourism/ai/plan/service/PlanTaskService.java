@@ -88,7 +88,7 @@ public class PlanTaskService {
             }
 
             try {
-                validator.validate(generated.getPlan(), plan.getDayCount(), plan.getStartDate());
+                validator.validate(generated.getPlan(), plan.getDayCount(), plan.getStartDate(), plan.getTransportPreference());
             } catch (Exception validationError) {
                 if (fallback || !properties.isPlanFallbackEnabled()) {
                     throw validationError;
@@ -96,7 +96,7 @@ public class PlanTaskService {
                 log.warn("AI 行程校验失败，使用内置模板兜底: {}", validationError.getMessage());
                 generated = mockGenerator.generate(plan, context);
                 fallback = true;
-                validator.validate(generated.getPlan(), plan.getDayCount(), plan.getStartDate());
+                validator.validate(generated.getPlan(), plan.getDayCount(), plan.getStartDate(), plan.getTransportPreference());
             }
 
             JsonNode planJson = generated.getPlan();

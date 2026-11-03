@@ -44,7 +44,7 @@ public class DeepSeekPlanGenerator implements PlanGenerator {
 
             JSON 顶层字段：
             title, summary, city, startDate, endDate, dayCount, preferences,
-            intercityTransport, days, budget, rainPlan, packingTips, warnings
+            intercityTransport, driving, days, budget, rainPlan, packingTips, warnings
 
             intercityTransport 字段：
             outbound, return, note
@@ -52,10 +52,18 @@ public class DeepSeekPlanGenerator implements PlanGenerator {
             outbound / return 字段：
             date, mode, title, duration, departureWindow, arrivalWindow, options, tip
 
-            mode 只能是：TRAIN / FLIGHT / MIXED。
+            mode 只能是：TRAIN / FLIGHT / MIXED / SELF_DRIVE。
             options 每项：type, label, note。最多 4 项，至少 1 项。
             outbound.date 必须等于 startDate，return.date 必须等于 endDate。
             note 写“具体车次、航班、票价与余票以 12306 或航空公司实时信息为准”。
+            SELF_DRIVE 时 note 改写为“实际里程、路况、过路费、油费与停车以导航和现场信息为准”。
+
+            driving 字段（仅当交通偏好为 SELF_DRIVE 时必填）：
+            route, distance, duration, tolls, fuel, parking, restStops, tips
+
+            restStops / tips 为字符串数组，至少 2 项。
+            SELF_DRIVE 时 intercityTransport 的 mode 使用 SELF_DRIVE，选项 type 使用“自驾”；
+            里程、耗时、过路费、油费均写“约”，并注明以导航和现场为准。
 
             days[i] 字段：
             day, date, theme, summary, timeline, food, transport
@@ -166,6 +174,7 @@ public class DeepSeekPlanGenerator implements PlanGenerator {
         return switch (preference) {
             case "TRAIN" -> "优先高铁";
             case "FLIGHT" -> "优先航班";
+            case "SELF_DRIVE" -> "自驾，规划路线、油费、过路费、停车与休息点";
             case "BOTH" -> "高铁与航班都给出";
             default -> "不限，按时间与舒适度选择";
         };

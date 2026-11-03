@@ -49,7 +49,12 @@ public class MockPlanGenerator implements PlanGenerator {
                 plan.getStartDate().toString(), true));
         intercity.set("return", transportLeg(plan, plan.getCityName(), plan.getOriginCityName(),
                 plan.getEndDate().toString(), false));
-        intercity.put("note", "以上为 AI 参考交通方案，具体车次、航班、票价与余票请以 12306 或航空公司实时信息为准。");
+        intercity.put("note", "SELF_DRIVE".equals(plan.getTransportPreference())
+                ? "以上为 AI 参考自驾路线，实际里程、路况、过路费、油费与停车请以导航和现场信息为准。"
+                : "以上为 AI 参考交通方案，具体车次、航班、票价与余票请以 12306 或航空公司实时信息为准。");
+        if ("SELF_DRIVE".equals(plan.getTransportPreference())) {
+            root.set("driving", drivingInfo(plan));
+        }
 
         ArrayNode days = root.putArray("days");
         List<PlanContextItem> foods = items.stream()
@@ -161,31 +166,62 @@ public class MockPlanGenerator implements PlanGenerator {
         String mode = switch (preference) {
             case "TRAIN" -> "TRAIN";
             case "FLIGHT" -> "FLIGHT";
+            case "SELF_DRIVE" -> "SELF_DRIVE";
             default -> "MIXED";
         };
         leg.put("date", date);
         leg.put("mode", mode);
         leg.put("title", from + " → " + to);
-        leg.put("duration", "高铁约 4-7 小时 / 航班约 2-3 小时（含往返机场）");
+        leg.put("duration", "SELF_DRIVE".equals(preference)
+                ? "按导航预估约 8-14 小时（不含休息）"
+                : "高铁约 4-7 小时 / 航班约 2-3 小时（含往返机场）");
         leg.put("departureWindow", outbound ? "07:00-09:00" : "16:00-18:00");
-        leg.put("arrivalWindow", outbound ? "11:00-15:00" : "19:00-22:00");
+        leg.put("arrivalWindow", outbound ? "15:00-19:00" : "21:00-23:00");
         ArrayNode options = leg.putArray("options");
-        if (!"FLIGHT".equals(preference)) {
+        if ("SELF_DRIVE".equals(preference)) {
+            options.addObject()
+                    .put("type", "自驾")
+                    .put("label", outbound ? "全程自驾 · 早出发" : "全程自驾 · 午后返程")
+                    .put("note", "建议每 2 小时进服务区休息，具体路线以导航为准");
+            leg.put("tip", outbound
+                    ? "出发前加满油、检查胎压，尽量避开早高峰出城。"
+                    : "返程前预留加油和休息时间，避免夜间疲劳驾驶。");
+        }
+        if (!"FLIGHT".equals(preference) && !"SELF_DRIVE".equals(preference)) {
             options.addObject()
                     .put("type", "高铁")
                     .put("label", outbound ? "G 字头早班" : "G 字头傍晚班")
                     .put("note", "建议提前 30 分钟到站，具体车次与票价以 12306 为准");
         }
-        if (!"TRAIN".equals(preference)) {
+        if (!"TRAIN".equals(preference) && !"SELF_DRIVE".equals(preference)) {
             options.addObject()
                     .put("type", "航班")
                     .put("label", outbound ? "早班直飞" : "傍晚直飞")
                     .put("note", "建议提前 2 小时到机场，具体航班以航司为准");
         }
-        leg.put("tip", outbound
-                ? "优先选择上午出发，给抵达后的入住和第一段行程留出时间。"
-                : "返程建议留出 2 小时以上缓冲，避免行程收尾太赶。");
+        if (!"SELF_DRIVE".equals(preference)) {
+            leg.put("tip", outbound
+                    ? "优先选择上午出发，给抵达后的入住和第一段行程留出时间。"
+                    : "返程建议留出 2 小时以上缓冲，避免行程收尾太赶。");
+        }
         return leg;
+    }
+
+    private ObjectNode drivingInfo(TravelPlan plan) {
+        ObjectNode driving = objectMapper.createObjectNode();
+        driving.put("route", plan.getOriginCityName() + " → " + plan.getCityName());
+        driving.put("distance", "约 800-1,300 km（以导航实际里程为准）");
+        driving.put("duration", "约 9-15 小时（不含休息与堵车）");
+        driving.put("tolls", "约 ¥400-700（以实际路段为准）");
+        driving.put("fuel", "约 ¥500-900（按车型与油价估算）");
+        driving.put("parking", "酒店与景区停车位以现场为准，建议提前电话确认");
+        ArrayNode restStops = driving.putArray("restStops");
+        restStops.add("建议每 2 小时进入服务区休息 15-20 分钟");
+        restStops.add("长途可在途经城市安排一晚中转，避免疲劳驾驶");
+        ArrayNode tips = driving.putArray("tips");
+        tips.add("出发前检查胎压、油量、刹车与应急工具");
+        tips.add("节假日尽量错峰出发，关注高速拥堵与天气预警");
+        return driving;
     }
 
     private PlanContextItem pick(List<PlanContextItem> list, int index) {

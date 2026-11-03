@@ -19,7 +19,7 @@ public class PlanValidator {
     private static final Set<String> TYPES = Set.of(
             "SPOT", "FOOD", "EXPERIENCE", "SHOP", "REST", "OTHER");
 
-    public void validate(JsonNode plan, int dayCount, LocalDate startDate) {
+    public void validate(JsonNode plan, int dayCount, LocalDate startDate, String transportPreference) {
         if (plan == null || !plan.isObject()) {
             throw new PlanGenerationException("AI 返回的攻略不是 JSON 对象");
         }
@@ -36,6 +36,9 @@ public class PlanValidator {
             throw new PlanGenerationException("攻略包含不安全 HTML 内容");
         }
         validateIntercity(plan, startDate, dayCount);
+        if ("SELF_DRIVE".equalsIgnoreCase(transportPreference)) {
+            validateDriving(plan);
+        }
 
         JsonNode days = plan.get("days");
         if (days == null || !days.isArray() || days.size() != dayCount) {
@@ -108,6 +111,23 @@ public class PlanValidator {
         }
     }
 
+    private void validateDriving(JsonNode plan) {
+        JsonNode driving = plan.get("driving");
+        if (driving == null || !driving.isObject()) {
+            throw new PlanGenerationException("自驾方案缺少路线信息");
+        }
+        if (!StringUtils.hasText(text(driving, "route"))
+                || !StringUtils.hasText(text(driving, "distance"))
+                || !StringUtils.hasText(text(driving, "duration"))
+                || !StringUtils.hasText(text(driving, "parking"))) {
+            throw new PlanGenerationException("自驾路线信息不完整");
+        }
+        JsonNode restStops = driving.get("restStops");
+        if (restStops == null || !restStops.isArray() || restStops.isEmpty()) {
+            throw new PlanGenerationException("自驾路线缺少休息/中转建议");
+        }
+    }
+
     private void validateTransportLeg(JsonNode leg, LocalDate expectedDate, String label) {
         if (leg == null || !leg.isObject()) {
             throw new PlanGenerationException(label + "交通方案格式错误");
@@ -116,7 +136,7 @@ public class PlanValidator {
             throw new PlanGenerationException(label + "日期不正确");
         }
         String mode = text(leg, "mode");
-        if (!Set.of("TRAIN", "FLIGHT", "MIXED").contains(mode)) {
+        if (!Set.of("TRAIN", "FLIGHT", "MIXED", "SELF_DRIVE").contains(mode)) {
             throw new PlanGenerationException(label + "交通方式不合法");
         }
         if (!StringUtils.hasText(text(leg, "title")) || !StringUtils.hasText(text(leg, "duration"))

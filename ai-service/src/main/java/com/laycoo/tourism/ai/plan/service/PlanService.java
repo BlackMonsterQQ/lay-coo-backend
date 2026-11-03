@@ -256,7 +256,7 @@ public class PlanService {
         }
         String normalized = value.trim().toUpperCase();
         return switch (normalized) {
-            case "FLIGHT", "TRAIN", "BOTH", "AUTO" -> normalized;
+            case "FLIGHT", "TRAIN", "BOTH", "SELF_DRIVE", "AUTO" -> normalized;
             default -> "AUTO";
         };
     }

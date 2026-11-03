@@ -161,14 +161,14 @@ Authorization: Bearer {{adminToken}}
 GET http://localhost:8080/api/v1/city/list
 
 ### 创建多日行程任务
+### transportPreference 可选：AUTO / TRAIN / FLIGHT / BOTH / SELF_DRIVE
 POST http://localhost:8080/api/v1/plan/generate
 Content-Type: application/json
 
 {
   "cityCode": "hangzhou",
   "originCityCode": "beijing",
-  "transportPreference": "BOTH",
-  "startDate": "2026-11-10",
+  "transportPreference": "BOTH",  "startDate": "2026-11-10",
   "endDate": "2026-11-12",
   "preferences": ["美食", "人文历史"],
   "extraNote": "带老人，不想走太多路"
