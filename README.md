@@ -73,6 +73,7 @@ http://localhost:8080/api/v1/content/list?page=1&size=3
 新增能力：
 
 - `GET /api/v1/city/list`：国内 339 个地级及以上城市（含港澳）与经纬度
+- `GET /api/v1/city/{code}/image`：城市地标背景图代理，从 Wikipedia 拉取并缓存到 `data/city-images/`
 - 城市坐标种子在 `content-service/src/main/resources/seed/city-seed.json`，来源说明见同目录 `README.md`
 - `POST /api/v1/plan/generate`：城市 + 开始/结束日期 + 偏好 → 异步生成行程
 - `GET /api/v1/plan/{planNo}`：轮询状态 / 获取结果
@@ -117,6 +118,8 @@ Environment variables 里配置 `AI_API_KEY`。
 | `JWT_SECRET` | JWT 密钥，生产环境必须替换 |
 | `AI_API_KEY` | DeepSeek Key；不配置时使用内置模板生成器 |
 | `AI_BASE_URL` / `AI_MODEL` | OpenAI 兼容地址与模型名 |
+| `CITY_IMAGE_PROXY` | 城市地标图片抓取代理，默认 `http://127.0.0.1:7897`；代理不可用时尝试直连 |
+| `CITY_IMAGE_CACHE_DIR` | 城市图片缓存目录，默认 `./data/city-images` |
 | `DB_DIR` | H2 数据目录，默认 `./data` |
 
 ## 构建与测试

@@ -27,6 +27,11 @@ mybatis-plus:
   global-config:
     banner: false
 
+city:
+  image:
+    proxy: ${CITY_IMAGE_PROXY:http://127.0.0.1:7897}
+    cache-dir: ${CITY_IMAGE_CACHE_DIR:./data/city-images}
+
 security:
   jwt:
     secret: ${JWT_SECRET:laycoo-tourism-local-secret-key-please-change-in-production}
