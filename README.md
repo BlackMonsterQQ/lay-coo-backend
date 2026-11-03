@@ -2,7 +2,7 @@
 
 GitHub：https://github.com/BlackMonsterQQ/lay-coo-backend
 
-Spring Boot 3.2 + Spring Cloud 2023（Gateway + OpenFeign）+ MyBatis-Plus + H2（本地演示）。
+Spring Boot 3.2 + Spring Cloud 2023（Gateway + OpenFeign）+ MyBatis-Plus + MySQL 8。
 
 本仓库只包含后端。前端是独立仓库 [lay-coo-frontend](https://github.com/BlackMonsterQQ/lay-coo-frontend)，通过网关 `http://localhost:8080` 联调。
 
@@ -18,6 +18,7 @@ IDEA 会把根目录 [pom.xml](pom.xml) 识别为 Maven 多模块项目。
 
 - Project SDK：JDK 17
 - Maven：3.9+
+- MySQL：8.x，数据库 `school`（默认连接 `localhost:3306`）
 - 开启 Lombok 注解处理：Settings → Build, Execution, Deployment → Compiler → Annotation Processors
 
 ## 目录
@@ -53,7 +54,7 @@ docs/                # 技术方案与接口样例
 E:\laycoo\backend
 ```
 
-这样 H2 数据库会统一写到 `data/` 下，与启动脚本保持一致。
+这样服务会统一连接 MySQL `school` 数据库，与启动脚本保持一致。
 
 也可以直接在仓库根目录执行：
 
@@ -79,6 +80,7 @@ http://localhost:8080/api/v1/content/list?page=1&size=3
 - 交通偏好支持 `AUTO` / `TRAIN` / `FLIGHT` / `BOTH` / `SELF_DRIVE`；生成结果包含去程/返程参考班次方案，自驾时额外返回路线、里程、油费、过路费、停车与休息建议
 - `GET /api/v1/plan/{planNo}`：轮询状态 / 获取结果
 - `POST /api/v1/plan/{planNo}/retry`：失败重试
+- `GET /api/v1/plan/my`：当前登录用户已保存的攻略列表（需要 JWT）
 - `GET /internal/content/plan-context`：content-service 向 ai-service 提供内容上下文
 
 默认使用 DeepSeek：
@@ -107,21 +109,31 @@ Environment variables 里配置 `AI_API_KEY`。
 
 ## 数据库与配置
 
-- 每个服务使用独立 H2 文件库，位于根目录 `data/`。
-- 建表脚本在各模块 `src/main/resources/schema.sql`。
-- 首次启动 content-service 会导入 [content-seed.json](content-service/src/main/resources/seed/content-seed.json)。
-- 删除根目录 `data/` 后重启可恢复初始数据。
+所有服务统一连接 MySQL：
+
+```text
+jdbc:mysql://localhost:3306/school
+用户名：root
+密码：123456
+```
+
+- 建表脚本在各模块 `src/main/resources/schema.sql`，首次启动自动创建表。
+- 应用用户表为 `sys_user`，不会修改 `school` 库里已有的 `user` 表。
+- 首次启动 content-service 会导入 [content-seed.json](content-service/src/main/resources/seed/content-seed.json)，user-service 会初始化演示账号。
+- 生成过的行程保存在 `travel_plan`，通过 `user_id` 关联登录用户，在「我的行程」页面查看。
+- 默认连接参数可在 `.env.local` 中用 `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` 覆盖。
 
 常用环境变量：
 
 | 变量 | 说明 |
 | --- | --- |
+| `DB_URL` | MySQL JDBC URL，默认 `jdbc:mysql://localhost:3306/school?...` |
+| `DB_USERNAME` / `DB_PASSWORD` | MySQL 用户名/密码，默认 `root` / `123456` |
 | `JWT_SECRET` | JWT 密钥，生产环境必须替换 |
 | `AI_API_KEY` | DeepSeek Key；不配置时使用内置模板生成器 |
 | `AI_BASE_URL` / `AI_MODEL` | OpenAI 兼容地址与模型名 |
 | `CITY_IMAGE_PROXY` | 城市地标图片抓取代理，默认 `http://127.0.0.1:7897`；代理不可用时尝试直连 |
 | `CITY_IMAGE_CACHE_DIR` | 城市图片缓存目录，默认 `./data/city-images` |
-| `DB_DIR` | H2 数据目录，默认 `./data` |
 
 ## 构建与测试
 

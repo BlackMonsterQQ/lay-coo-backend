@@ -113,7 +113,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                     || path.startsWith("/api/v1/search")
                     || path.startsWith("/api/v1/recommend")
                     || path.startsWith("/api/v1/city")
-                    || path.startsWith("/api/v1/plan")
+                    || (path.startsWith("/api/v1/plan") && !path.startsWith("/api/v1/plan/my"))
                     || path.equals("/api/v1/interaction/comment/list")
                     || path.equals("/api/v1/interaction/stats")
                     || path.startsWith("/api/v1/rate/summary")

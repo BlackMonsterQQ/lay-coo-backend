@@ -1,6 +1,7 @@
 package com.laycoo.tourism.ai.plan.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.laycoo.tourism.ai.config.AiProperties;
@@ -9,9 +10,11 @@ import com.laycoo.tourism.ai.plan.dto.CityInfo;
 import com.laycoo.tourism.ai.plan.dto.PlanDetailResponse;
 import com.laycoo.tourism.ai.plan.dto.PlanGenerateRequest;
 import com.laycoo.tourism.ai.plan.dto.PlanGenerateResponse;
+import com.laycoo.tourism.ai.plan.dto.PlanSummaryResponse;
 import com.laycoo.tourism.ai.plan.entity.TravelPlan;
 import com.laycoo.tourism.ai.plan.mapper.TravelPlanMapper;
 import com.laycoo.tourism.common.api.ApiResponse;
+import com.laycoo.tourism.common.api.PageResult;
 import com.laycoo.tourism.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -113,6 +116,38 @@ public class PlanService {
         planMapper.insert(plan);
         planTaskService.runAsync(plan.getId());
         return response(plan);
+    }
+
+    public PageResult<PlanSummaryResponse> list(Long userId, long page, long size) {
+        if (userId == null) {
+            throw new BusinessException(401, "请先登录后查看我的行程");
+        }
+        long current = Math.max(page, 1);
+        long pageSize = Math.min(Math.max(size, 1), 50);
+        Page<TravelPlan> result = planMapper.selectPage(new Page<>(current, pageSize),
+                new LambdaQueryWrapper<TravelPlan>()
+                        .eq(TravelPlan::getUserId, userId)
+                        .orderByDesc(TravelPlan::getCreateTime));
+        List<PlanSummaryResponse> list = result.getRecords().stream().map(plan -> {
+            PlanSummaryResponse item = new PlanSummaryResponse();
+            item.setPlanNo(plan.getPlanNo());
+            item.setCity(plan.getCityName());
+            item.setCityCode(plan.getCityCode());
+            item.setOriginCity(plan.getOriginCityName());
+            item.setOriginCityCode(plan.getOriginCityCode());
+            item.setStartDate(plan.getStartDate());
+            item.setEndDate(plan.getEndDate());
+            item.setDayCount(plan.getDayCount());
+            item.setNights(Math.max(0, plan.getDayCount() - 1));
+            item.setStatus(plan.getStatus());
+            item.setTitle(plan.getTitle());
+            item.setSummary(plan.getSummary());
+            item.setTransportPreference(plan.getTransportPreference());
+            item.setModel(plan.getModel());
+            item.setCreateTime(plan.getCreateTime());
+            return item;
+        }).toList();
+        return PageResult.of(list, result.getTotal(), current, pageSize);
     }
 
     public PlanDetailResponse detail(String planNo) {

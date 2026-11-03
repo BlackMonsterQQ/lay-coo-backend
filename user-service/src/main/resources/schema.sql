@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS sys_user
     role        VARCHAR(16) DEFAULT 'USER',
     status      INT         DEFAULT 1,
     create_time TIMESTAMP,
-    update_time TIMESTAMP
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_sys_user_username ON sys_user (username);
+    update_time TIMESTAMP,
+    UNIQUE KEY uk_sys_user_username (username)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;

@@ -6,18 +6,16 @@ CREATE TABLE IF NOT EXISTS category
     type        VARCHAR(16) NOT NULL,
     icon        VARCHAR(16),
     sort        INT DEFAULT 0,
-    description VARCHAR(255)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_category_code ON category (code);
+    description VARCHAR(255),
+    UNIQUE KEY uk_category_code (code)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS tag
 (
     id   BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(32) NOT NULL
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_tag_name ON tag (name);
+    name VARCHAR(32) NOT NULL,
+    UNIQUE KEY uk_tag_name (name)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS content
 (
@@ -28,9 +26,9 @@ CREATE TABLE IF NOT EXISTS content
     city_code      VARCHAR(32) DEFAULT 'hangzhou',
     area           VARCHAR(64),
     address        VARCHAR(255),
-    body           VARCHAR(8000),
-    highlights     VARCHAR(2000),
-    tips           VARCHAR(1024),
+    body           TEXT,
+    highlights     TEXT,
+    tips           TEXT,
     opening_hours  VARCHAR(128),
     price_range    VARCHAR(64),
     cover_desc     VARCHAR(255),
@@ -47,17 +45,12 @@ CREATE TABLE IF NOT EXISTS content
     publish_time   TIMESTAMP,
     create_time    TIMESTAMP,
     update_time    TIMESTAMP,
-    deleted        INT DEFAULT 0
-);
-
-CREATE INDEX IF NOT EXISTS idx_content_status ON content (status);
-CREATE INDEX IF NOT EXISTS idx_content_category ON content (category_id);
-CREATE INDEX IF NOT EXISTS idx_content_area ON content (area);
-
--- 已有数据库升级：补充城市字段
-ALTER TABLE content ADD COLUMN IF NOT EXISTS city_code VARCHAR(32) DEFAULT 'hangzhou';
-CREATE INDEX IF NOT EXISTS idx_content_city ON content (city_code);
-UPDATE content SET city_code = 'hangzhou' WHERE city_code IS NULL;
+    deleted        INT DEFAULT 0,
+    KEY idx_content_status (status),
+    KEY idx_content_category (category_id),
+    KEY idx_content_area (area),
+    KEY idx_content_city (city_code)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS city
 (
@@ -70,18 +63,14 @@ CREATE TABLE IF NOT EXISTS city
     latitude    DECIMAL(10, 6) NOT NULL,
     has_content INT DEFAULT 0,
     enabled     INT DEFAULT 1,
-    sort        INT DEFAULT 0
-);
-
-ALTER TABLE city ADD COLUMN IF NOT EXISTS province VARCHAR(64);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_city_code ON city (code);
+    sort        INT DEFAULT 0,
+    UNIQUE KEY uk_city_code (code)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS content_tag
 (
     content_id BIGINT NOT NULL,
     tag_id     BIGINT NOT NULL,
-    PRIMARY KEY (content_id, tag_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_content_tag_tag ON content_tag (tag_id);
+    PRIMARY KEY (content_id, tag_id),
+    KEY idx_content_tag_tag (tag_id)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;

@@ -3,8 +3,10 @@ package com.laycoo.tourism.ai.plan.controller;
 import com.laycoo.tourism.ai.plan.dto.PlanDetailResponse;
 import com.laycoo.tourism.ai.plan.dto.PlanGenerateRequest;
 import com.laycoo.tourism.ai.plan.dto.PlanGenerateResponse;
+import com.laycoo.tourism.ai.plan.dto.PlanSummaryResponse;
 import com.laycoo.tourism.ai.plan.service.PlanService;
 import com.laycoo.tourism.common.api.ApiResponse;
+import com.laycoo.tourism.common.api.PageResult;
 import com.laycoo.tourism.common.security.UserContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -28,6 +31,13 @@ public class PlanController {
     public ApiResponse<PlanGenerateResponse> generate(@Valid @RequestBody PlanGenerateRequest request,
                                                       HttpServletRequest httpRequest) {
         return ApiResponse.ok(planService.create(request, UserContext.getUserId(), clientIp(httpRequest)));
+    }
+
+    @GetMapping("/my")
+    public ApiResponse<PageResult<PlanSummaryResponse>> myPlans(
+            @RequestParam(defaultValue = "1") long page,
+            @RequestParam(defaultValue = "9") long size) {
+        return ApiResponse.ok(planService.list(UserContext.getUserId(), page, size));
     }
 
     @GetMapping("/{planNo}")
